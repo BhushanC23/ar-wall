@@ -105,6 +105,43 @@ function logDebug(message) {
   el.textContent = `[${time}] ${message}`;
 }
 
+function ensureCameraVideoVisible() {
+  // MindAR injects a <video> for the camera feed. On some mobile browsers it can end up 0x0 or not playing.
+  const videos = Array.from(document.querySelectorAll("video"));
+  // Prefer the biggest video element if multiple exist.
+  const video = videos.sort((a, b) => (b.videoWidth * b.videoHeight) - (a.videoWidth * a.videoHeight))[0] || videos[0];
+  if (!video) {
+    logDebug("No <video> element found yet");
+    return null;
+  }
+
+  try {
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("webkit-playsinline", "true");
+    video.muted = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.style.position = "fixed";
+    video.style.inset = "0";
+    video.style.width = "100%";
+    video.style.height = "100%";
+    video.style.objectFit = "cover";
+    video.style.objectPosition = "center center";
+    video.style.zIndex = "0";
+    video.style.background = "#000";
+  } catch {
+    // ignore
+  }
+
+  // Try to play (some browsers need a direct play() call after user gesture)
+  if (video.paused) {
+    const p = video.play?.();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  }
+
+  return video;
+}
+
 function setLoadingText(text) {
   const el = document.getElementById("loading-text");
   if (el) el.textContent = text;
@@ -200,8 +237,9 @@ async function startAR() {
   const mindarThree = new MINDAR.IMAGE.MindARThree({
     container: document.body,
     imageTargetSrc: CONFIG.imageTargetSrc,
-    uiLoading: true,
-    uiScanning: true,
+    // Disable built-in UI overlays; we provide our own HUD.
+    uiLoading: false,
+    uiScanning: false,
     maxTrack: 1,
   });
 
@@ -342,6 +380,18 @@ async function startAR() {
 
   logDebug("MindAR started (scanning)");
   hideLoading();
+
+  // After MindAR starts, force camera video visibility/attributes.
+  const camVideo = ensureCameraVideoVisible();
+  if (camVideo) {
+    const tick = () => {
+      const hasFrames = (camVideo.readyState >= 2) && (camVideo.videoWidth > 0) && (camVideo.videoHeight > 0);
+      logDebug(hasFrames ? `Camera OK ${camVideo.videoWidth}x${camVideo.videoHeight}` : `Camera starting… readyState=${camVideo.readyState}`);
+    };
+    tick();
+    setTimeout(tick, 800);
+    setTimeout(tick, 2000);
+  }
 
   renderer.setAnimationLoop(() => {
     // Animate badges (pulse) when active

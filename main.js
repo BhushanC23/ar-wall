@@ -291,6 +291,9 @@ if (startBtn) {
     startBtn.disabled = true;
     startBtn.textContent = "Starting…";
     setLoading("Starting camera…");
+    // Hide the overlay quickly after user gesture so it doesn't stick.
+    // MindAR will show its own scanning UI (uiLoading/uiScanning).
+    setTimeout(() => hideLoading(), 250);
     startAR().catch((e) => {
       console.error(e);
       setLoading("Failed to start. See debug panel.");

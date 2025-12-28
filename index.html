@@ -121,6 +121,127 @@
       height: 100%;
       border: 0;
     }
+
+    /* Bottom sheet (Project Card) */
+    #sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 25;
+      transform: translateY(110%);
+      transition: transform 220ms ease;
+      padding: 0 calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
+      pointer-events: none;
+    }
+
+    #sheet.open {
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    #sheet .card {
+      width: min(720px, 100%);
+      margin: 0 auto;
+      background: rgba(18, 18, 18, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      box-shadow: 0 18px 60px rgba(0,0,0,0.7);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+
+    #sheet .grabber {
+      width: 44px;
+      height: 4px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 999px;
+      margin: 10px auto 0;
+    }
+
+    #sheet .content {
+      padding: 12px 14px 14px;
+      color: #fff;
+    }
+
+    #sheet .title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    #sheet h2 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    #sheet .subtitle {
+      margin: 6px 0 10px;
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    #sheet ul {
+      margin: 0 0 12px 0;
+      padding-left: 18px;
+      font-size: 13px;
+      line-height: 1.35;
+      opacity: 0.95;
+    }
+
+    #sheet .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      background: #19a974;
+      color: #08120d;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .btn.secondary {
+      background: rgba(255,255,255,0.10);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.14);
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .btn.icon {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 8px 10px;
+      font-size: 12px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    /* Put the sheet above the YouTube container */
+    #youtube-container {
+      bottom: 190px;
+    }
+
+    @media (max-height: 700px) {
+      #youtube-container {
+        bottom: 170px;
+      }
+    }
   </style>
 </head>
 
@@ -151,6 +272,34 @@
       allow="autoplay; encrypted-media; picture-in-picture"
       allowfullscreen>
     </iframe>
+  </div>
+
+  <!-- Bottom Sheet Project Card -->
+  <div id="sheet" aria-live="polite">
+    <div class="card">
+      <div class="grabber"></div>
+      <div class="content">
+        <div class="title-row">
+          <div>
+            <h2 id="sheet-title">Project</h2>
+            <div id="sheet-subtitle" class="subtitle">Point camera at the poster to play video</div>
+          </div>
+          <button id="sheet-close" class="btn icon" type="button">Close</button>
+        </div>
+
+        <ul id="sheet-bullets">
+          <li>Problem statement</li>
+          <li>Solution overview</li>
+          <li>Impact / outcome</li>
+        </ul>
+
+        <div class="actions">
+          <button id="sheet-watch" class="btn primary" type="button">Watch Video</button>
+          <button id="sheet-open" class="btn secondary" type="button">Open on YouTube</button>
+          <button id="sheet-unmute" class="btn secondary" type="button">Unmute Hint</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- AR logic -->

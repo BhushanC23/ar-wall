@@ -11,14 +11,91 @@ const CONFIG = {
 
 // Target index must match the image order inside the .mind file (0..6)
 const TARGETS = [
-  { index: 0, title: "Project 1", subtitle: "Scan the poster to watch", youtubeId: "DR8Lr5PKHLM" },
-  { index: 1, title: "Project 2", subtitle: "Scan the poster to watch", youtubeId: "q_XTtRjI5FE" },
-  { index: 2, title: "Project 3", subtitle: "Scan the poster to watch", youtubeId: "MgY01n03QLU" },
-  { index: 3, title: "Project 4", subtitle: "Scan the poster to watch", youtubeId: "zQGQLEE1nQs" },
-  { index: 4, title: "Project 5", subtitle: "Scan the poster to watch", youtubeId: "v9uY-S2s1AU" },
-  { index: 5, title: "Project 6", subtitle: "Scan the poster to watch", youtubeId: "1a5nyrMtRsk" },
-  { index: 6, title: "Project 7", subtitle: "Scan the poster to watch", youtubeId: "kJKtTUD088k" },
+  {
+    index: 0,
+    title: "Project 1",
+    subtitle: "Scan the poster to watch",
+    youtubeId: "DR8Lr5PKHLM",
+    bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
+  },
+  {
+    index: 1,
+    title: "Project 2",
+    subtitle: "Scan the poster to watch",
+    youtubeId: "q_XTtRjI5FE",
+    bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
+  },
+  {
+    index: 2,
+    title: "Project 3",
+    subtitle: "Scan the poster to watch",
+    youtubeId: "MgY01n03QLU",
+    bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
+  },
+  {
+    index: 3,
+    title: "Project 4",
+    subtitle: "Scan the poster to watch",
+    youtubeId: "zQGQLEE1nQs",
+    bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
+  },
+  {
+    index: 4,
+    title: "Project 5",
+    subtitle: "Scan the poster to watch",
+    youtubeId: "v9uY-S2s1AU",
+    bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
+  },
+  {
+    index: 5,
+    title: "Project 6",
+    subtitle: "Scan the poster to watch",
+    youtubeId: "1a5nyrMtRsk",
+    bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
+  },
+  {
+    index: 6,
+    title: "Project 7",
+    subtitle: "Scan the poster to watch",
+    youtubeId: "kJKtTUD088k",
+    bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
+  },
 ];
+
+function getYouTubeWatchUrl(videoId) {
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+function updateSheetForTarget(target) {
+  const sheet = document.getElementById("sheet");
+  if (!sheet) return;
+
+  const titleEl = document.getElementById("sheet-title");
+  const subtitleEl = document.getElementById("sheet-subtitle");
+  const bulletsEl = document.getElementById("sheet-bullets");
+
+  if (titleEl) titleEl.textContent = target?.title || "Project";
+  if (subtitleEl) subtitleEl.textContent = target?.subtitle || "";
+
+  if (bulletsEl) {
+    bulletsEl.innerHTML = "";
+    const bullets = Array.isArray(target?.bullets) ? target.bullets : [];
+    const safeBullets = bullets.length ? bullets : ["Problem statement", "Solution overview", "Impact / outcome"];
+    safeBullets.slice(0, 3).forEach((b) => {
+      const li = document.createElement("li");
+      li.textContent = b;
+      bulletsEl.appendChild(li);
+    });
+  }
+
+  sheet.classList.add("open");
+}
+
+function closeSheet() {
+  const sheet = document.getElementById("sheet");
+  if (!sheet) return;
+  sheet.classList.remove("open");
+}
 
 function logDebug(message) {
   const el = document.getElementById("debug");
@@ -101,6 +178,11 @@ async function startAR() {
   const youtubeContainer = getEl("youtube-container");
   const youtubeVideo = getEl("youtube-video");
 
+  const sheetWatchBtn = document.getElementById("sheet-watch");
+  const sheetOpenBtn = document.getElementById("sheet-open");
+  const sheetCloseBtn = document.getElementById("sheet-close");
+  const sheetUnmuteBtn = document.getElementById("sheet-unmute");
+
   const mindarThree = new MINDAR.IMAGE.MindARThree({
     container: document.body,
     imageTargetSrc: CONFIG.imageTargetSrc,
@@ -115,6 +197,29 @@ async function startAR() {
 
   let currentTargetIndex = null;
   let lostTimeout = null;
+
+  // Wire sheet buttons once
+  if (sheetCloseBtn) sheetCloseBtn.onclick = () => closeSheet();
+  if (sheetOpenBtn) {
+    sheetOpenBtn.onclick = () => {
+      const t = TARGETS[currentTargetIndex ?? -1];
+      if (!t?.youtubeId) return;
+      window.open(getYouTubeWatchUrl(t.youtubeId), "_blank", "noopener,noreferrer");
+    };
+  }
+  if (sheetWatchBtn) {
+    sheetWatchBtn.onclick = () => {
+      if (typeof currentTargetIndex !== "number") return;
+      playVideoForTarget(currentTargetIndex);
+    };
+  }
+  if (sheetUnmuteBtn) {
+    sheetUnmuteBtn.onclick = () => {
+      setLoading("To hear audio: open video and unmute in YouTube player.");
+      logDebug("Unmute hint shown");
+      setTimeout(() => hideLoading(), 1200);
+    };
+  }
 
   function stopVideo() {
     youtubeVideo.src = "";
@@ -135,7 +240,7 @@ async function startAR() {
     }
 
     // Autoplay reliability: start muted; user can unmute in player.
-    youtubeVideo.src = buildYouTubeSrc(t.youtubeId, { muted: false });
+    youtubeVideo.src = buildYouTubeSrc(t.youtubeId, { muted: true });
     youtubeContainer.style.display = "block";
     currentTargetIndex = index;
   }
@@ -148,6 +253,7 @@ async function startAR() {
       console.log(`✅ Target ${i} found`);
       logDebug(`Target ${i} found`);
       hideLoading();
+      updateSheetForTarget(TARGETS[i]);
       playVideoForTarget(i);
     };
 

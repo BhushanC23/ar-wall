@@ -28,14 +28,14 @@
       }
     }
 
-    /* MindAR injects a canvas; force it to cover the full screen */
-    canvas {
+    /* MindAR injects a canvas; force it to cover the full screen.
+       Keep selector narrow to avoid breaking other canvases. */
+    body > canvas {
       position: fixed !important;
       inset: 0 !important;
       width: 100% !important;
       height: 100% !important;
       display: block !important;
-      z-index: 1;
     }
 
     :root {

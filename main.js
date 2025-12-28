@@ -170,8 +170,17 @@ async function startAR() {
     logDebug("Camera permission OK");
   } catch (e) {
     console.error(e);
-    setLoading("Camera blocked. Allow camera permission in browser settings.");
-    logDebug(`Camera permission failed: ${e?.name || e}`);
+    const name = e?.name || "UnknownError";
+    if (name === "NotReadableError") {
+      setLoading("Camera is busy. Close other apps/tabs using camera, then try again.");
+    } else if (name === "NotAllowedError" || name === "SecurityError") {
+      setLoading("Camera blocked. Allow camera permission in browser settings.");
+    } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+      setLoading("No usable camera found. Try switching browser/device.");
+    } else {
+      setLoading("Camera failed to start. Try again after closing other camera apps.");
+    }
+    logDebug(`Camera permission failed: ${name}`);
     return;
   }
 
@@ -278,6 +287,7 @@ async function startAR() {
   }
 
   logDebug("MindAR started (scanning)");
+  hideLoading();
 
   renderer.setAnimationLoop(() => {
     renderer.render(scene, camera);
@@ -291,9 +301,6 @@ if (startBtn) {
     startBtn.disabled = true;
     startBtn.textContent = "Starting…";
     setLoading("Starting camera…");
-    // Hide the overlay quickly after user gesture so it doesn't stick.
-    // MindAR will show its own scanning UI (uiLoading/uiScanning).
-    setTimeout(() => hideLoading(), 250);
     startAR().catch((e) => {
       console.error(e);
       setLoading("Failed to start. See debug panel.");
@@ -301,6 +308,12 @@ if (startBtn) {
       startBtn.disabled = false;
       startBtn.textContent = "Start AR";
     });
+    // If it takes too long, keep UI responsive and show a helpful hint.
+    setTimeout(() => {
+      if (document.getElementById("loading")?.style?.display !== "none") {
+        setLoading("Still starting… If stuck, close other camera apps and try again.");
+      }
+    }, 4000);
   });
 } else {
   // Fallback if button missing

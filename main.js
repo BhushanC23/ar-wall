@@ -135,7 +135,7 @@ async function startAR() {
     }
 
     // Autoplay reliability: start muted; user can unmute in player.
-    youtubeVideo.src = buildYouTubeSrc(t.youtubeId, { muted: true });
+    youtubeVideo.src = buildYouTubeSrc(t.youtubeId, { muted: false });
     youtubeContainer.style.display = "block";
     currentTargetIndex = index;
   }

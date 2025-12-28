@@ -38,6 +38,23 @@
       display: block !important;
     }
 
+    /* MindAR also injects a <video> element for the camera feed.
+       If it isn't fullscreen, you'll see a black screen with overlays. */
+    body > video {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      object-position: center center !important;
+      background: #000;
+      z-index: 0;
+    }
+
+    body > canvas {
+      z-index: 1;
+    }
+
     :root {
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-right: env(safe-area-inset-right, 0px);

@@ -129,6 +129,11 @@ function hideLoading() {
   loadingEl.style.display = "none";
 }
 
+function setHudLocked(locked) {
+  // When locked=true, hide reticle/hint.
+  document.body.classList.toggle("hud-hidden", !!locked);
+}
+
 function buildYouTubeSrc(videoId, { muted } = { muted: true }) {
   const params = new URLSearchParams({
     autoplay: "1",
@@ -202,7 +207,40 @@ async function startAR() {
 
   const { renderer, scene, camera } = mindarThree;
 
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
   scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1));
+
+  const arAccent = 0x19a974;
+
+  function createTargetBadge() {
+    const group = new THREE.Group();
+
+    const frameGeo = new THREE.PlaneGeometry(1.05, 1.05);
+    const frameMat = new THREE.MeshBasicMaterial({
+      color: arAccent,
+      transparent: true,
+      opacity: 0.0,
+      side: THREE.DoubleSide,
+    });
+    const frame = new THREE.Mesh(frameGeo, frameMat);
+    group.add(frame);
+
+    const ringGeo = new THREE.RingGeometry(0.42, 0.48, 64);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: arAccent,
+      transparent: true,
+      opacity: 0.0,
+      side: THREE.DoubleSide,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.z = 0.01;
+    group.add(ring);
+
+    group.userData = { frameMat, ringMat, active: false };
+    group.visible = false;
+    return group;
+  }
 
   let currentTargetIndex = null;
   let lostTimeout = null;
@@ -258,10 +296,20 @@ async function startAR() {
   for (let i = 0; i < CONFIG.targetCount; i++) {
     const anchor = mindarThree.addAnchor(i);
 
+    const badge = createTargetBadge();
+    anchor.group.add(badge);
+
     anchor.onTargetFound = () => {
       console.log(`✅ Target ${i} found`);
       logDebug(`Target ${i} found`);
       hideLoading();
+      setHudLocked(true);
+
+      badge.visible = true;
+      badge.userData.active = true;
+      badge.userData.frameMat.opacity = 0.35;
+      badge.userData.ringMat.opacity = 0.85;
+
       updateSheetForTarget(TARGETS[i]);
       playVideoForTarget(i);
     };
@@ -269,6 +317,12 @@ async function startAR() {
     anchor.onTargetLost = () => {
       console.log(`❌ Target ${i} lost`);
       logDebug(`Target ${i} lost`);
+
+      setHudLocked(false);
+
+      badge.userData.active = false;
+      badge.visible = false;
+
       // Grace period to avoid flicker when tracking jitters
       if (lostTimeout) clearTimeout(lostTimeout);
       lostTimeout = setTimeout(() => {
@@ -290,6 +344,16 @@ async function startAR() {
   hideLoading();
 
   renderer.setAnimationLoop(() => {
+    // Animate badges (pulse) when active
+    const t = performance.now() * 0.001;
+    scene.traverse((obj) => {
+      if (!obj?.userData?.frameMat || !obj?.userData?.ringMat) return;
+      if (!obj.userData.active) return;
+      const pulse = 0.6 + 0.4 * Math.sin(t * 3.2);
+      obj.userData.ringMat.opacity = 0.35 + 0.45 * pulse;
+      obj.userData.frameMat.opacity = 0.12 + 0.18 * pulse;
+      obj.rotation.z = 0.02 * Math.sin(t * 1.5);
+    });
     renderer.render(scene, camera);
   });
 }

@@ -98,6 +98,65 @@
       word-break: break-word;
     }
 
+    /* AR HUD (reticle) */
+    #hud {
+      position: fixed;
+      inset: 0;
+      z-index: 15;
+      pointer-events: none;
+    }
+
+    #reticle {
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      width: 180px;
+      height: 180px;
+      transform: translate(-50%, -50%);
+      border-radius: 24px;
+      border: 2px solid rgba(25, 169, 116, 0.55);
+      box-shadow:
+        0 0 0 6px rgba(25, 169, 116, 0.08),
+        0 0 26px rgba(25, 169, 116, 0.22);
+      backdrop-filter: blur(1px);
+      opacity: 0.9;
+      transition: opacity 200ms ease;
+    }
+
+    #reticle::before,
+    #reticle::after {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border-radius: 18px;
+      border: 1px dashed rgba(255, 255, 255, 0.22);
+    }
+
+    #reticle::after {
+      inset: 34px;
+      border-style: solid;
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    #hud-hint {
+      position: absolute;
+      left: 50%;
+      top: calc(42% + 110px);
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .hud-hidden #reticle,
+    .hud-hidden #hud-hint {
+      opacity: 0;
+    }
+
     /* YouTube overlay */
     #youtube-container {
       position: fixed;
@@ -257,6 +316,12 @@
   </div>
 
   <div id="debug"></div>
+
+  <!-- AR HUD overlay -->
+  <div id="hud">
+    <div id="reticle"></div>
+    <div id="hud-hint">Point at a poster to lock AR</div>
+  </div>
 
   <!-- Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>

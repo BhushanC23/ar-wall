@@ -9,13 +9,16 @@ const CONFIG = {
   lostGraceMs: 250,
 };
 
-// Replace these with real project details later
-const TARGETS = Array.from({ length: CONFIG.targetCount }, (_, i) => ({
-  index: i,
-  title: `Project ${i + 1}`,
-  subtitle: "Scan the poster to watch",
-  youtubeId: "5DETK0oQoFY",
-}));
+// Target index must match the image order inside the .mind file (0..6)
+const TARGETS = [
+  { index: 0, title: "Project 1", subtitle: "Scan the poster to watch", youtubeId: "DR8Lr5PKHLM" },
+  { index: 1, title: "Project 2", subtitle: "Scan the poster to watch", youtubeId: "q_XTtRjI5FE" },
+  { index: 2, title: "Project 3", subtitle: "Scan the poster to watch", youtubeId: "MgY01n03QLU" },
+  { index: 3, title: "Project 4", subtitle: "Scan the poster to watch", youtubeId: "zQGQLEE1nQs" },
+  { index: 4, title: "Project 5", subtitle: "Scan the poster to watch", youtubeId: "v9uY-S2s1AU" },
+  { index: 5, title: "Project 6", subtitle: "Scan the poster to watch", youtubeId: "1a5nyrMtRsk" },
+  { index: 6, title: "Project 7", subtitle: "Scan the poster to watch", youtubeId: "kJKtTUD088k" },
+];
 
 function logDebug(message) {
   const el = document.getElementById("debug");

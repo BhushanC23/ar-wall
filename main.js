@@ -163,49 +163,24 @@ async function startAR() {
     throw new Error("WebGL not available");
   }
 
-  // Camera warm-up (helps on some phones where MindAR start races the camera)
-  const warmupAttempts = [
-    { video: { facingMode: { ideal: "environment" } }, audio: false },
-    { video: { facingMode: "environment" }, audio: false },
-    { video: true, audio: false },
-  ];
-
-  let warmedUp = false;
-  let lastWarmupErrorName = "";
-  for (const constraints of warmupAttempts) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      // Keep it alive for a moment so the camera actually starts.
-      await new Promise((r) => setTimeout(r, 250));
-      stream.getTracks().forEach((t) => t.stop());
-      // Give the device a beat to release the camera before MindAR opens it.
-      await new Promise((r) => setTimeout(r, 150));
-      logDebug("Camera warm-up OK");
-      warmedUp = true;
-      break;
-    } catch (e) {
-      console.error(e);
-      lastWarmupErrorName = e?.name || "UnknownError";
-      if (lastWarmupErrorName === "NotReadableError") {
-        // Often means camera is in use or couldn't start. Try next fallback.
-        continue;
-      }
-      // For other errors, no need to keep trying.
-      break;
-    }
-  }
-
-  if (!warmedUp) {
-    if (lastWarmupErrorName === "NotReadableError") {
+  // Quick permission probe to surface a useful error
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+    stream.getTracks().forEach((t) => t.stop());
+    logDebug("Camera permission OK");
+  } catch (e) {
+    console.error(e);
+    const name = e?.name || "UnknownError";
+    if (name === "NotReadableError") {
       setLoading("Camera is busy. Close other apps/tabs using camera, then try again.");
-    } else if (lastWarmupErrorName === "NotAllowedError" || lastWarmupErrorName === "SecurityError") {
+    } else if (name === "NotAllowedError" || name === "SecurityError") {
       setLoading("Camera blocked. Allow camera permission in browser settings.");
-    } else if (lastWarmupErrorName === "NotFoundError" || lastWarmupErrorName === "OverconstrainedError") {
+    } else if (name === "NotFoundError" || name === "OverconstrainedError") {
       setLoading("No usable camera found. Try switching browser/device.");
     } else {
       setLoading("Camera failed to start. Try again after closing other camera apps.");
     }
-    logDebug(`Camera warm-up failed: ${lastWarmupErrorName || "UnknownError"}`);
+    logDebug(`Camera permission failed: ${name}`);
     return;
   }
 
@@ -326,20 +301,13 @@ if (startBtn) {
     startBtn.disabled = true;
     startBtn.textContent = "Starting…";
     setLoading("Starting camera…");
-    startAR()
-      .catch((e) => {
-        console.error(e);
-        setLoading("Failed to start. See debug panel.");
-        logDebug(`Unhandled error: ${e?.name || e}`);
-      })
-      .finally(() => {
-        // If loading is still visible, AR didn't start; allow retry.
-        const loadingVisible = document.getElementById("loading")?.style?.display !== "none";
-        if (loadingVisible) {
-          startBtn.disabled = false;
-          startBtn.textContent = "Start AR";
-        }
-      });
+    startAR().catch((e) => {
+      console.error(e);
+      setLoading("Failed to start. See debug panel.");
+      logDebug(`Unhandled error: ${e?.name || e}`);
+      startBtn.disabled = false;
+      startBtn.textContent = "Start AR";
+    });
     // If it takes too long, keep UI responsive and show a helpful hint.
     setTimeout(() => {
       if (document.getElementById("loading")?.style?.display !== "none") {

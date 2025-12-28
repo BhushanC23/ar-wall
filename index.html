@@ -335,6 +335,11 @@
       bottom: 190px;
     }
 
+    /* When playing, make it feel more 'AR-attached' (still an overlay) */
+    #youtube-container {
+      border: 1px solid rgba(25, 169, 116, 0.18);
+    }
+
     @media (max-height: 700px) {
       #youtube-container {
         bottom: 170px;
@@ -408,6 +413,9 @@
 
   <!-- AR logic -->
   <script src="main.js"></script>
+  <script>
+    fetch('main.js?x=' + Date.now()).then(r => r.text()).then(t => console.log(t.includes('ensureCameraVideoVisible')))
+  </script>
 
 </body>
 </html>

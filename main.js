@@ -444,8 +444,10 @@ async function startAR() {
     const data = hits[0]?.object?.userData;
     if (!data?.youtubeId) return;
 
-    // Optimized flow: open YouTube in a new tab (most reliable on phones).
-    window.open(getYouTubeWatchUrl(data.youtubeId), "_blank", "noopener,noreferrer");
+    // In-page playback: show the existing YouTube overlay player.
+    // This cannot be rendered as a true texture on the AR plane (cross-origin),
+    // so we keep the AR card anchored and play video as an overlay.
+    playVideoForTarget(data.index);
   }
 
   // Create anchors for 0..6

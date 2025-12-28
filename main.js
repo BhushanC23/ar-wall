@@ -182,6 +182,11 @@ function buildYouTubeSrc(videoId, { muted } = { muted: true }) {
   return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
 }
 
+function buildYouTubeThumb(videoId) {
+  // HQ thumbnail (works without API key)
+  return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+}
+
 async function startAR() {
   logDebug("StartAR clicked");
 
@@ -228,6 +233,8 @@ async function startAR() {
 
   const youtubeContainer = getEl("youtube-container");
   const youtubeVideo = getEl("youtube-video");
+  // Default: keep YouTube overlay hidden; we show an AR card on target.
+  youtubeContainer.style.display = "none";
 
   const sheetWatchBtn = document.getElementById("sheet-watch");
   const sheetOpenBtn = document.getElementById("sheet-open");
@@ -250,6 +257,10 @@ async function startAR() {
   scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1));
 
   const arAccent = 0x19a974;
+
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  const tappables = [];
 
   function createTargetBadge() {
     const group = new THREE.Group();
@@ -277,6 +288,91 @@ async function startAR() {
 
     group.userData = { frameMat, ringMat, active: false };
     group.visible = false;
+    return group;
+  }
+
+  async function loadThumbTexture(videoId) {
+    if (!videoId) return null;
+    const loader = new THREE.TextureLoader();
+    return new Promise((resolve) => {
+      loader.load(
+        buildYouTubeThumb(videoId),
+        (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace || THREE.sRGBEncoding;
+          resolve(tex);
+        },
+        undefined,
+        () => resolve(null)
+      );
+    });
+  }
+
+  function createVideoCard(target) {
+    const group = new THREE.Group();
+
+    const cardW = 1.15;
+    const cardH = 0.72;
+
+    const bg = new THREE.Mesh(
+      new THREE.PlaneGeometry(cardW, cardH),
+      new THREE.MeshBasicMaterial({ color: 0x0b0f0d, transparent: true, opacity: 0.92, side: THREE.DoubleSide })
+    );
+    bg.position.z = 0.02;
+    group.add(bg);
+
+    const border = new THREE.Mesh(
+      new THREE.PlaneGeometry(cardW + 0.03, cardH + 0.03),
+      new THREE.MeshBasicMaterial({ color: arAccent, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+    );
+    border.position.z = 0.015;
+    group.add(border);
+
+    const thumbMat = new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 1, side: THREE.DoubleSide });
+    const thumb = new THREE.Mesh(new THREE.PlaneGeometry(cardW - 0.08, cardH - 0.2), thumbMat);
+    thumb.position.set(0, 0.06, 0.03);
+    group.add(thumb);
+
+    // Play icon
+    const play = new THREE.Mesh(
+      new THREE.RingGeometry(0.06, 0.09, 48),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide })
+    );
+    play.position.set(0, 0.02, 0.04);
+    group.add(play);
+
+    const triangleShape = new THREE.Shape();
+    triangleShape.moveTo(-0.02, -0.03);
+    triangleShape.lineTo(0.04, 0);
+    triangleShape.lineTo(-0.02, 0.03);
+    triangleShape.lineTo(-0.02, -0.03);
+    const tri = new THREE.Mesh(
+      new THREE.ShapeGeometry(triangleShape),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, side: THREE.DoubleSide })
+    );
+    tri.position.set(0.01, 0.02, 0.045);
+    group.add(tri);
+
+    group.visible = false;
+    group.userData = {
+      type: "video-card",
+      index: target?.index,
+      youtubeId: target?.youtubeId,
+      thumb,
+      thumbMat,
+      active: false,
+    };
+
+    // Preload thumbnail async
+    loadThumbTexture(target?.youtubeId).then((tex) => {
+      if (!tex) return;
+      thumbMat.map = tex;
+      thumbMat.needsUpdate = true;
+    });
+
+    // Enable tapping via raycast
+    tappables.push(bg);
+    bg.userData = group.userData;
+
     return group;
   }
 
@@ -330,12 +426,39 @@ async function startAR() {
     currentTargetIndex = index;
   }
 
+  function handleTap(ev) {
+    if (!renderer?.domElement) return;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+    const clientX = ev.touches?.[0]?.clientX ?? ev.clientX;
+    const clientY = ev.touches?.[0]?.clientY ?? ev.clientY;
+    if (clientX == null || clientY == null) return;
+
+    pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -(((clientY - rect.top) / rect.height) * 2 - 1);
+    raycaster.setFromCamera(pointer, camera);
+
+    const hits = raycaster.intersectObjects(tappables, false);
+    if (!hits.length) return;
+
+    const data = hits[0]?.object?.userData;
+    if (!data?.youtubeId) return;
+
+    // Optimized flow: open YouTube in a new tab (most reliable on phones).
+    window.open(getYouTubeWatchUrl(data.youtubeId), "_blank", "noopener,noreferrer");
+  }
+
   // Create anchors for 0..6
   for (let i = 0; i < CONFIG.targetCount; i++) {
     const anchor = mindarThree.addAnchor(i);
 
     const badge = createTargetBadge();
     anchor.group.add(badge);
+
+    const card = createVideoCard(TARGETS[i]);
+    // Place card slightly above target center
+    card.position.set(0, 0.0, 0.05);
+    anchor.group.add(card);
 
     anchor.onTargetFound = () => {
       console.log(`✅ Target ${i} found`);
@@ -348,8 +471,12 @@ async function startAR() {
       badge.userData.frameMat.opacity = 0.35;
       badge.userData.ringMat.opacity = 0.85;
 
+      card.visible = true;
+      card.userData.active = true;
+
       updateSheetForTarget(TARGETS[i]);
-      playVideoForTarget(i);
+      // Do NOT autoplay YouTube overlay; AR card handles playback intent.
+      stopVideo();
     };
 
     anchor.onTargetLost = () => {
@@ -360,6 +487,9 @@ async function startAR() {
 
       badge.userData.active = false;
       badge.visible = false;
+
+      card.userData.active = false;
+      card.visible = false;
 
       // Grace period to avoid flicker when tracking jitters
       if (lostTimeout) clearTimeout(lostTimeout);
@@ -392,6 +522,12 @@ async function startAR() {
     setTimeout(tick, 800);
     setTimeout(tick, 2000);
   }
+
+  // Tap support on canvas
+  const dom = renderer.domElement;
+  dom.style.touchAction = "manipulation";
+  dom.addEventListener("click", handleTap, { passive: true });
+  dom.addEventListener("touchstart", handleTap, { passive: true });
 
   renderer.setAnimationLoop(() => {
     // Animate badges (pulse) when active

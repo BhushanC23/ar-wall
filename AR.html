@@ -2,15 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MindAR Image Tracking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>AR Wall (A-Frame)</title>
 
     <!-- MindAR & A-Frame -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-      body { margin: 0; overflow: hidden; }
+      html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
       #container { width: 100vw; height: 100vh; }
       #debug-console {
         position: absolute;
@@ -27,63 +27,122 @@
         overflow-y: auto;
         font-size: 12px;
       }
+
+      #start-ui {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.88);
+        z-index: 9998;
+        padding: 18px;
+        text-align: center;
+      }
+
+      #start-ui .panel {
+        width: min(520px, 92vw);
+        background: rgba(18,18,18,0.9);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 16px;
+        padding: 16px;
+        color: #fff;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      }
+
+      #start-ui h1 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+
+      #start-ui p {
+        margin: 0 0 14px;
+        opacity: 0.85;
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      #btn-start {
+        width: 100%;
+        border: 0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        background: #19a974;
+        color: #08120d;
+        font-weight: 800;
+        font-size: 15px;
+      }
+
+      /* In-page YouTube overlay (2D) */
+      #yt-overlay {
+        position: fixed;
+        left: 50%;
+        bottom: 16px;
+        transform: translateX(-50%);
+        width: min(560px, 95vw);
+        aspect-ratio: 16 / 9;
+        display: none;
+        z-index: 9997;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #000;
+        box-shadow: 0 16px 60px rgba(0,0,0,0.65);
+        border: 1px solid rgba(25,169,116,0.18);
+      }
+
+      #yt-overlay iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+
+      #yt-close {
+        position: fixed;
+        right: 12px;
+        bottom: calc(16px + (min(560px, 95vw) * 9 / 16) + 10px);
+        z-index: 9999;
+        display: none;
+        background: rgba(0,0,0,0.55);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.16);
+        border-radius: 999px;
+        padding: 8px 10px;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        font-size: 12px;
+      }
     </style>
   </head>
 
   <body>
+    <div id="start-ui">
+      <div class="panel">
+        <h1>AR Wall Demo</h1>
+        <p>Tap Start AR, allow camera, then point at a poster.</p>
+        <button id="btn-start" type="button">Start AR</button>
+      </div>
+    </div>
+
     <div id="debug-console">Debug Console:<br></div>
+
+    <div id="yt-overlay"><iframe id="yt-iframe" src="" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+    <button id="yt-close" type="button">Close</button>
+
     <div id="container">
     <!-- MindAR only supports one .mind file with multiple targets inside. -->
     <a-scene
-      mindar-image="imageTargetSrc: ./Targets/targets.mind; uiError:yes; uiLoading:yes;"
+      id="scene"
+      mindar-image="imageTargetSrc: ./Targets/sample.mind; uiError:yes; uiLoading:no; uiScanning:no;"
       embedded
       color-space="sRGB"
       renderer="colorManagement: true; physicallyCorrectLights: true;"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
       >
-        <!-- Assets -->
-        <a-assets>
-            <a-asset-item id="model-tajmahal" src="./model/taj_mahal_3d_model.glb"></a-asset-item>
-        </a-assets>
-
         <!-- Lighting -->
         <a-entity light="type: ambient; intensity: 0.5; color: #cccccc"></a-entity>
         <a-entity light="type: directional; intensity: 0.7; color: #e0e0e0" position="2 4 2"></a-entity>
 
-        <!-- Model Target 1 (Taj Mahal) -->
-        <a-entity mindar-image-target="targetIndex: 0">
-          <!-- Taj Mahal 3D Model (original size preserved) -->
-          <a-gltf-model
-            src="#model-tajmahal"
-            position="0 0.01 0"
-            scale="0.0015 0.0015 0.0015"
-            rotation="0 0 0"
-            animation="property: rotation; to: 0 360 0; loop: true; dur: 9000; easing: linear"
-          ></a-gltf-model>
-
-          <!-- Text Panel shifted to right side -->
-          <!-- X=0.30 positions panel to right; adjust further if needed -->
-          <a-entity id="info-panel" position="1.00 -0.02 0" scale="0.0043 0.0043 0.0043">
-            <!-- Background Panel (landscape orientation) -->
-            <a-entity geometry="primitive: plane; width: 230; height: 140" material="color: #000000; opacity: 0.60" position="0 70 0"></a-entity>
-
-            <!-- Title -->
-            <a-entity position="0 120 0" scale="2.25 2.25 1">
-              <a-entity text="value: TAJ MAHAL; align: center; width: 170; color: #FFC94D; wrapCount: 48"></a-entity>
-            </a-entity>
-
-            <!-- Description -->
-            <a-entity position="0 78 0" scale="1.45 1.45 1">
-              <a-entity text="value: A UNESCO World Heritage Site\\nBuilt by Emperor Shah Jahan (1632-1648)\\nSymbol of eternal love; align: center; width: 190; color: #FFFFFF; wrapCount: 50"></a-entity>
-            </a-entity>
-
-            <!-- Additional Info -->
-            <a-entity position="0 34 0" scale="1.05 1.05 1">
-              <a-entity text="value: Location: Agra, India\\nMaterial: White marble\\nWorkers: 20,000\\nEstimated Cost: 32 million rupees; align: center; width: 190; color: #E6E6FA; wrapCount: 50"></a-entity>
-            </a-entity>
-          </a-entity>
-        </a-entity>
+        <!-- Targets injected by script -->
 
         <!-- Camera -->
         <a-camera position="0 1 0" look-controls="enabled: false"></a-camera>
@@ -97,7 +156,41 @@
         console.log(msg);
       }
 
-      const scene = document.querySelector('a-scene');
+      const TARGETS = [
+        { index: 0, title: 'Project 1', bullets: ['Problem statement', 'Solution overview', 'Impact / outcome'], youtubeId: 'DR8Lr5PKHLM' },
+        { index: 1, title: 'Project 2', bullets: ['Problem statement', 'Solution overview', 'Impact / outcome'], youtubeId: 'q_XTtRjI5FE' },
+        { index: 2, title: 'Project 3', bullets: ['Problem statement', 'Solution overview', 'Impact / outcome'], youtubeId: 'MgY01n03QLU' },
+        { index: 3, title: 'Project 4', bullets: ['Problem statement', 'Solution overview', 'Impact / outcome'], youtubeId: 'zQGQLEE1nQs' },
+        { index: 4, title: 'Project 5', bullets: ['Problem statement', 'Solution overview', 'Impact / outcome'], youtubeId: 'v9uY-S2s1AU' },
+        { index: 5, title: 'Project 6', bullets: ['Problem statement', 'Solution overview', 'Impact / outcome'], youtubeId: '1a5nyrMtRsk' },
+        { index: 6, title: 'Project 7', bullets: ['Problem statement', 'Solution overview', 'Impact / outcome'], youtubeId: 'kJKtTUD088k' },
+      ];
+
+      function buildYouTubeEmbed(videoId) {
+        const params = new URLSearchParams({ autoplay: '1', playsinline: '1', rel: '0', modestbranding: '1', mute: '1' });
+        return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+      }
+
+      const ytOverlay = document.getElementById('yt-overlay');
+      const ytIframe = document.getElementById('yt-iframe');
+      const ytClose = document.getElementById('yt-close');
+      function openYT(videoId) {
+        if (!videoId) return;
+        ytIframe.src = buildYouTubeEmbed(videoId);
+        ytOverlay.style.display = 'block';
+        ytClose.style.display = 'block';
+      }
+      function closeYT() {
+        ytIframe.src = '';
+        ytOverlay.style.display = 'none';
+        ytClose.style.display = 'none';
+      }
+      ytClose.addEventListener('click', closeYT);
+
+      const startUI = document.getElementById('start-ui');
+      const btnStart = document.getElementById('btn-start');
+
+      const scene = document.querySelector('#scene');
 
       scene.addEventListener('loaded', () => {
         log('A-Frame Scene loaded');
@@ -111,15 +204,91 @@
         log('MindAR Error: ' + (event.detail.error || 'Unknown'));
       });
 
-      const model = document.querySelector('a-gltf-model');
-      if (model) {
-        model.addEventListener('model-loaded', () => {
-          log('3D Model loaded successfully');
+      // Create target entities with floating text panels
+      function createTargetEntity(t) {
+        const root = document.createElement('a-entity');
+        root.setAttribute('mindar-image-target', `targetIndex: ${t.index}`);
+
+        // Floating panel (right side)
+        const panel = document.createElement('a-entity');
+        panel.setAttribute('position', '0.7 0.05 0');
+        panel.setAttribute('scale', '0.8 0.8 0.8');
+
+        const bg = document.createElement('a-entity');
+        bg.setAttribute('geometry', 'primitive: plane; width: 1.6; height: 0.9');
+        bg.setAttribute('material', 'color: #0b0f0d; opacity: 0.78');
+        bg.setAttribute('position', '0 0 0');
+        panel.appendChild(bg);
+
+        const title = document.createElement('a-entity');
+        title.setAttribute('text', `value: ${t.title}; align: center; width: 2.4; color: #19a974; wrapCount: 22`);
+        title.setAttribute('position', '0 0.28 0.01');
+        panel.appendChild(title);
+
+        const bullets = (t.bullets || []).slice(0, 3).map((b) => `• ${b}`).join('\n');
+        const body = document.createElement('a-entity');
+        body.setAttribute('text', `value: ${bullets}; align: left; width: 2.2; color: #ffffff; wrapCount: 30; lineHeight: 52`);
+        body.setAttribute('position', '-0.72 0.05 0.01');
+        panel.appendChild(body);
+
+        // A subtle float animation
+        panel.setAttribute('animation__float', 'property: position; dir: alternate; dur: 1400; easing: easeInOutSine; loop: true; to: 0.7 0.09 0');
+
+        // Clickable play button (a-plane)
+        const playBtn = document.createElement('a-entity');
+        playBtn.setAttribute('geometry', 'primitive: plane; width: 1.1; height: 0.22');
+        playBtn.setAttribute('material', 'color: #19a974; opacity: 0.95');
+        playBtn.setAttribute('position', '0 -0.32 0.02');
+        const playText = document.createElement('a-entity');
+        playText.setAttribute('text', 'value: TAP TO PLAY; align: center; width: 2.2; color: #08120d; wrapCount: 18');
+        playText.setAttribute('position', '0 0 0.01');
+        playBtn.appendChild(playText);
+        playBtn.classList.add('tap-play');
+        playBtn.dataset.youtubeId = t.youtubeId;
+        panel.appendChild(playBtn);
+
+        root.appendChild(panel);
+
+        // Target events
+        root.addEventListener('targetFound', () => {
+          log(`Target ${t.index} found`);
+          closeYT();
         });
-        model.addEventListener('model-error', (e) => {
-          log('Error loading 3D Model: ' + e.detail.src);
+        root.addEventListener('targetLost', () => {
+          log(`Target ${t.index} lost`);
         });
+
+        return root;
       }
+
+      TARGETS.forEach((t) => scene.appendChild(createTargetEntity(t)));
+
+      // Add a raycaster + cursor for tapping on mobile
+      const camera = scene.querySelector('a-camera');
+      camera.setAttribute('cursor', 'rayOrigin: mouse; fuse: false');
+      camera.setAttribute('raycaster', 'objects: .tap-play');
+
+      scene.addEventListener('click', (e) => {
+        const el = e.target;
+        if (el && el.classList && el.classList.contains('tap-play')) {
+          openYT(el.dataset.youtubeId);
+        }
+      });
+
+      // Start AR on user gesture
+      btnStart.addEventListener('click', async () => {
+        btnStart.disabled = true;
+        btnStart.textContent = 'Starting…';
+        try {
+          await scene.systems['mindar-image-system'].start();
+          startUI.style.display = 'none';
+          log('AR started');
+        } catch (e) {
+          log('Failed to start AR: ' + (e?.message || e));
+          btnStart.disabled = false;
+          btnStart.textContent = 'Start AR';
+        }
+      });
     </script>
   </body>
 </html>

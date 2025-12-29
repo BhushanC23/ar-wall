@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MindAR Image Tracking</title>
+
+    <!-- MindAR & A-Frame -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+      body { margin: 0; overflow: hidden; }
+      #container { width: 100vw; height: 100vh; }
+      #debug-console {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: lime;
+        padding: 10px;
+        font-family: monospace;
+        z-index: 9999;
+        pointer-events: none;
+        max-width: 300px;
+        max-height: 50vh;
+        overflow-y: auto;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="debug-console">Debug Console:<br></div>
+    <div id="container">
+    <!-- MindAR only supports one .mind file with multiple targets inside. -->
+    <a-scene
+      mindar-image="imageTargetSrc: ./Targets/targets.mind; uiError:yes; uiLoading:yes;"
+      embedded
+      color-space="sRGB"
+      renderer="colorManagement: true; physicallyCorrectLights: true;"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      >
+        <!-- Assets -->
+        <a-assets>
+            <a-asset-item id="model-tajmahal" src="./model/taj_mahal_3d_model.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Lighting -->
+        <a-entity light="type: ambient; intensity: 0.5; color: #cccccc"></a-entity>
+        <a-entity light="type: directional; intensity: 0.7; color: #e0e0e0" position="2 4 2"></a-entity>
+
+        <!-- Model Target 1 (Taj Mahal) -->
+        <a-entity mindar-image-target="targetIndex: 0">
+          <!-- Taj Mahal 3D Model (original size preserved) -->
+          <a-gltf-model
+            src="#model-tajmahal"
+            position="0 0.01 0"
+            scale="0.0015 0.0015 0.0015"
+            rotation="0 0 0"
+            animation="property: rotation; to: 0 360 0; loop: true; dur: 9000; easing: linear"
+          ></a-gltf-model>
+
+          <!-- Text Panel shifted to right side -->
+          <!-- X=0.30 positions panel to right; adjust further if needed -->
+          <a-entity id="info-panel" position="1.00 -0.02 0" scale="0.0043 0.0043 0.0043">
+            <!-- Background Panel (landscape orientation) -->
+            <a-entity geometry="primitive: plane; width: 230; height: 140" material="color: #000000; opacity: 0.60" position="0 70 0"></a-entity>
+
+            <!-- Title -->
+            <a-entity position="0 120 0" scale="2.25 2.25 1">
+              <a-entity text="value: TAJ MAHAL; align: center; width: 170; color: #FFC94D; wrapCount: 48"></a-entity>
+            </a-entity>
+
+            <!-- Description -->
+            <a-entity position="0 78 0" scale="1.45 1.45 1">
+              <a-entity text="value: A UNESCO World Heritage Site\\nBuilt by Emperor Shah Jahan (1632-1648)\\nSymbol of eternal love; align: center; width: 190; color: #FFFFFF; wrapCount: 50"></a-entity>
+            </a-entity>
+
+            <!-- Additional Info -->
+            <a-entity position="0 34 0" scale="1.05 1.05 1">
+              <a-entity text="value: Location: Agra, India\\nMaterial: White marble\\nWorkers: 20,000\\nEstimated Cost: 32 million rupees; align: center; width: 190; color: #E6E6FA; wrapCount: 50"></a-entity>
+            </a-entity>
+          </a-entity>
+        </a-entity>
+
+        <!-- Camera -->
+        <a-camera position="0 1 0" look-controls="enabled: false"></a-camera>
+      </a-scene>
+    </div>
+
+    <script>
+      const debugConsole = document.getElementById('debug-console');
+      function log(msg) {
+        debugConsole.innerHTML += `> ${msg}<br>`;
+        console.log(msg);
+      }
+
+      const scene = document.querySelector('a-scene');
+
+      scene.addEventListener('loaded', () => {
+        log('A-Frame Scene loaded');
+      });
+
+      scene.addEventListener('arReady', () => {
+        log('MindAR is Ready!');
+      });
+
+      scene.addEventListener('arError', (event) => {
+        log('MindAR Error: ' + (event.detail.error || 'Unknown'));
+      });
+
+      const model = document.querySelector('a-gltf-model');
+      if (model) {
+        model.addEventListener('model-loaded', () => {
+          log('3D Model loaded successfully');
+        });
+        model.addEventListener('model-error', (e) => {
+          log('Error loading 3D Model: ' + e.detail.src);
+        });
+      }
+    </script>
+  </body>
+</html>

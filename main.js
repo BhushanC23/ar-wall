@@ -484,8 +484,8 @@ async function startAR() {
       card.userData.active = true;
 
       updateSheetForTarget(TARGETS[i]);
-      // Do NOT autoplay YouTube overlay; AR card handles playback intent.
-      stopVideo();
+      // Auto-play YouTube video immediately when target is detected
+      playVideoForTarget(i);
     };
 
     anchor.onTargetLost = () => {

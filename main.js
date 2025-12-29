@@ -43,14 +43,14 @@ const TARGETS = [
     index: 4,
     title: "Sanjivani Sankalp 2K25",
     subtitle: "Scan the poster to watch",
-    youtubeId: "YyCXp_E4sMU",
+    youtubeId: "LapShmDf4e0",
     bullets: ["University Initiative", "Student Programs", "2025 Event"],
   },
   {
     index: 5,
     title: "Garba @Sanjivani",
     subtitle: "Scan the poster to watch",
-    youtubeId: "6Jk0zgNmXZ4",
+    youtubeId: "yXpGDPt7P0U",
     bullets: ["Cultural Dance", "Traditional Celebration", "Campus Event"],
   },
   {

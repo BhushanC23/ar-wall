@@ -178,7 +178,7 @@ function setHudLocked(locked) {
   document.body.classList.toggle("hud-hidden", !!locked);
 }
 
-function buildYouTubeSrc(videoId, { muted } = { muted: true }) {
+function buildYouTubeSrc(videoId, { muted } = { muted: false }) {
   const params = new URLSearchParams({
     autoplay: "1",
     playsinline: "1",
@@ -427,8 +427,8 @@ async function startAR() {
       lostTimeout = null;
     }
 
-    // Autoplay reliability: start muted; user can unmute in player.
-    youtubeVideo.src = buildYouTubeSrc(t.youtubeId, { muted: true });
+    // Play with sound enabled for better user experience
+    youtubeVideo.src = buildYouTubeSrc(t.youtubeId, { muted: false });
     youtubeContainer.style.display = "block";
     currentTargetIndex = index;
   }
@@ -500,9 +500,13 @@ async function startAR() {
       card.userData.active = false;
       card.visible = false;
 
-      // Grace period to avoid flicker when tracking jitters
+      // Immediately stop video when target is lost (no grace period for video)
+      stopVideo();
+      
+      // Grace period to avoid flicker when tracking jitters (only for visuals)
       if (lostTimeout) clearTimeout(lostTimeout);
       lostTimeout = setTimeout(() => {
+        // Ensure video is stopped even after grace period
         if (currentTargetIndex === i) stopVideo();
       }, CONFIG.lostGraceMs);
     };

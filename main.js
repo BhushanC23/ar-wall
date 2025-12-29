@@ -262,6 +262,74 @@ async function startAR() {
   const pointer = new THREE.Vector2();
   const tappables = [];
 
+  function makeTextPanelTexture({ title, subtitle, bullets }) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1024;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d");
+
+    // Background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(12, 14, 13, 0.86)";
+    roundRect(ctx, 24, 24, canvas.width - 48, canvas.height - 48, 32);
+    ctx.fill();
+
+    // Accent border
+    ctx.strokeStyle = "rgba(25, 169, 116, 0.55)";
+    ctx.lineWidth = 6;
+    roundRect(ctx, 24, 24, canvas.width - 48, canvas.height - 48, 32);
+    ctx.stroke();
+
+    // Text
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "700 52px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText((title || "Project").slice(0, 34), 72, 110);
+
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = "500 34px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    if (subtitle) ctx.fillText(subtitle.slice(0, 48), 72, 162);
+
+    const safeBullets = Array.isArray(bullets) && bullets.length ? bullets : ["Problem", "Solution", "Impact"];
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    const lines = safeBullets.slice(0, 3);
+    const startY = 250;
+    lines.forEach((b, idx) => {
+      ctx.fillText(`• ${(b || "").slice(0, 60)}`, 72, startY + idx * 70);
+    });
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+  }
+
+  function createInfoPanel(target) {
+    const group = new THREE.Group();
+    const tex = makeTextPanelTexture({ title: target?.title, subtitle: target?.subtitle, bullets: target?.bullets });
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 1, side: THREE.DoubleSide });
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.35, 0.68), mat);
+    // Slightly to the right and above the target center
+    plane.position.set(0.85, 0.25, 0.06);
+    group.add(plane);
+
+    group.visible = false;
+    group.userData = { type: "info-panel" };
+    return group;
+  }
+
   function createTargetBadge() {
     const group = new THREE.Group();
 
@@ -462,6 +530,9 @@ async function startAR() {
     card.position.set(0, 0.0, 0.05);
     anchor.group.add(card);
 
+    const infoPanel = createInfoPanel(TARGETS[i]);
+    anchor.group.add(infoPanel);
+
     anchor.onTargetFound = () => {
       console.log(`✅ Target ${i} found`);
       logDebug(`Target ${i} found`);
@@ -476,7 +547,10 @@ async function startAR() {
       card.visible = true;
       card.userData.active = true;
 
-      updateSheetForTarget(TARGETS[i]);
+      infoPanel.visible = true;
+
+      // Description is shown as an AR-attached panel; keep sheet closed by default.
+      closeSheet();
       // Do NOT autoplay YouTube overlay; AR card handles playback intent.
       stopVideo();
     };
@@ -492,6 +566,8 @@ async function startAR() {
 
       card.userData.active = false;
       card.visible = false;
+
+      infoPanel.visible = false;
 
       // Grace period to avoid flicker when tracking jitters
       if (lostTimeout) clearTimeout(lostTimeout);

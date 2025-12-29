@@ -4,60 +4,67 @@
 // Update TARGETS + imageTargetSrc later when your final .mind is ready.
 
 const CONFIG = {
-  imageTargetSrc: "./Targets/sample.mind",
-  targetCount: 7,
+  imageTargetSrc: "./Targets/targets.mind",
+  targetCount: 8,
   lostGraceMs: 250,
 };
 
-// Target index must match the image order inside the .mind file (0..6)
+// Target index must match the image order inside the .mind file (0..7)
 const TARGETS = [
   {
     index: 0,
-    title: "Project 1",
+    title: "CTF",
     subtitle: "Scan the poster to watch",
     youtubeId: "DR8Lr5PKHLM",
     bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
   },
   {
     index: 1,
-    title: "Project 2",
+    title: "Eureka",
     subtitle: "Scan the poster to watch",
-    youtubeId: "q_XTtRjI5FE",
+    youtubeId: "DR8Lr5PKHLM",
     bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
   },
   {
     index: 2,
-    title: "Project 3",
+    title: "Garba",
     subtitle: "Scan the poster to watch",
-    youtubeId: "MgY01n03QLU",
+    youtubeId: "DR8Lr5PKHLM",
     bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
   },
   {
     index: 3,
-    title: "Project 4",
+    title: "Induction",
     subtitle: "Scan the poster to watch",
-    youtubeId: "zQGQLEE1nQs",
+    youtubeId: "DR8Lr5PKHLM",
     bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
   },
   {
     index: 4,
-    title: "Project 5",
+    title: "Japan",
     subtitle: "Scan the poster to watch",
-    youtubeId: "v9uY-S2s1AU",
+    youtubeId: "DR8Lr5PKHLM",
     bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
   },
   {
     index: 5,
-    title: "Project 6",
+    title: "SIH",
     subtitle: "Scan the poster to watch",
-    youtubeId: "1a5nyrMtRsk",
+    youtubeId: "DR8Lr5PKHLM",
     bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
   },
   {
     index: 6,
-    title: "Project 7",
+    title: "TEDx",
     subtitle: "Scan the poster to watch",
-    youtubeId: "kJKtTUD088k",
+    youtubeId: "DR8Lr5PKHLM",
+    bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
+  },
+  {
+    index: 7,
+    title: "Web App Dev",
+    subtitle: "Scan the poster to watch",
+    youtubeId: "DR8Lr5PKHLM",
     bullets: ["Problem statement", "Solution overview", "Impact / outcome"],
   },
 ];

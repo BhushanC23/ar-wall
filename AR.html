@@ -12,6 +12,25 @@
     <style>
       html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
       #container { width: 100vw; height: 100vh; }
+      /* MindAR injected camera/canvas fullscreen fix */
+      body > video {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        object-position: center center !important;
+        background: #000;
+        z-index: 0;
+      }
+      body > canvas {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: block !important;
+        z-index: 1;
+      }
       #debug-console {
         position: absolute;
         top: 10px;
@@ -225,14 +244,14 @@
         title.setAttribute('position', '0 0.28 0.01');
         panel.appendChild(title);
 
-        const bullets = (t.bullets || []).slice(0, 3).map((b) => `• ${b}`).join('\n');
+        const bullets = (t.bullets || []).slice(0, 3).map((b) => `\u2022 ${b}`).join('\n');
         const body = document.createElement('a-entity');
         body.setAttribute('text', `value: ${bullets}; align: left; width: 2.2; color: #ffffff; wrapCount: 30; lineHeight: 52`);
         body.setAttribute('position', '-0.72 0.05 0.01');
         panel.appendChild(body);
 
-        // A subtle float animation
-        panel.setAttribute('animation__float', 'property: position; dir: alternate; dur: 1400; easing: easeInOutSine; loop: true; to: 0.7 0.09 0');
+        // Much more subtle float animation (less shaking)
+        panel.setAttribute('animation__float', 'property: position; dir: alternate; dur: 2200; easing: easeInOutSine; loop: true; to: 0.7 0.08 0');
 
         // Clickable play button (a-plane)
         const playBtn = document.createElement('a-entity');
@@ -245,6 +264,11 @@
         playBtn.appendChild(playText);
         playBtn.classList.add('tap-play');
         playBtn.dataset.youtubeId = t.youtubeId;
+        // Robust click handler: works even if child is clicked
+        playBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openYT(t.youtubeId);
+        });
         panel.appendChild(playBtn);
 
         root.appendChild(panel);
@@ -263,23 +287,19 @@
 
       TARGETS.forEach((t) => scene.appendChild(createTargetEntity(t)));
 
-      // Add a raycaster + cursor for tapping on mobile
+
+      // Add a raycaster + cursor for tapping on mobile (entity-based, more robust)
       const camera = scene.querySelector('a-camera');
-      camera.setAttribute('cursor', 'rayOrigin: mouse; fuse: false');
+      camera.setAttribute('cursor', 'rayOrigin: entity; fuse: false');
       camera.setAttribute('raycaster', 'objects: .tap-play');
 
-      scene.addEventListener('click', (e) => {
-        const el = e.target;
-        if (el && el.classList && el.classList.contains('tap-play')) {
-          openYT(el.dataset.youtubeId);
-        }
-      });
-
-      // Start AR on user gesture
+      // Start AR on user gesture, with MindAR smoothing
       btnStart.addEventListener('click', async () => {
         btnStart.disabled = true;
         btnStart.textContent = 'Starting…';
         try {
+          // Set MindAR filter smoothing for less jitter
+          scene.setAttribute('mindar-image', 'filterMinCF:0.0001; filterBeta:0.05;');
           await scene.systems['mindar-image-system'].start();
           startUI.style.display = 'none';
           log('AR started');

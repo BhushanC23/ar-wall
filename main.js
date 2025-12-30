@@ -36,7 +36,7 @@ const TARGETS = [
     index: 3,
     title: "Ohayou Japan – Japanese Festival 2025",
     subtitle: "Experience culture, art, and tradition",
-    youtubeId: "f-pj_pU_88U",
+    youtubeId: "K0R7gh9I39Q",
     bullets: ["Japanese Culture", "Festival Celebration", "Tradition & Art"],
   },
   {
